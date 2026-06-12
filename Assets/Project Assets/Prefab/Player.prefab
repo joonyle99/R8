@@ -129,7 +129,7 @@ LineRenderer:
       m_ColorSpace: -1
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
-    numCornerVertices: 90
+    numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
     textureMode: 1
@@ -288,7 +288,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerBehaviour
   maxHp: 5
   attack: 1
-  _maxFallSpeed: 150
   _launchHitPauseDuration: 0.15
   _bounceHitPauseDuration: 0.15
   _knockbackX: 12
@@ -297,7 +296,6 @@ MonoBehaviour:
   _blinkInterval: 0.08
   _hitStopDuration: 0.5
   _hitStopTimeScale: 0
-  _debugState: 
 --- !u!114 &1848701631826351291
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -330,7 +328,6 @@ MonoBehaviour:
   _platformLayer:
     serializedVersion: 2
     m_Bits: 512
-  _castDistance: 0.1
 --- !u!114 &7643538789384636602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -458,12 +455,12 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: d93b6fb85cd370642915994edd052bc3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 35c2d83ace2181442b6d03b22ec0ccef, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 0.83, y: 0.76}
+  m_Size: {x: 1.28, y: 1.28}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1

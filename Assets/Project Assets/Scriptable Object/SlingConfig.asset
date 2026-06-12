@@ -14,11 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShotConfig
   slingGravity: 40
   slingSpeed: 40
+  slingTime: 0.3
+  bonusTime: 0.15
   wallAngleThreshold: 10
-  aimTimeScale: 0.1
+  groundShotMaxAngle: 10
+  groundShotAimLineLength: 3
+  aimTimeScale: 0.05
   circleCastRadius: 0.37
   minDistance: 2
   maxBounces: 1
+  maxSlingCharges: 3
   kick:
     angle: 70
     speed: 20
