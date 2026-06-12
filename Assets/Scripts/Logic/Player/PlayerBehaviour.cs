@@ -228,7 +228,7 @@ public sealed class PlayerBehaviour : SlingEntity
     {
         if (IsDead) return;
 
-        if (_fsm?.CurrState is PlayerAirState airState)
-            airState.OnCollision(this, collision);
+        if (_fsm.CurrState is PlayerAirState airState)
+            airState.OnCollisionEnter(this, collision);
     }
 }

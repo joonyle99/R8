@@ -6,6 +6,7 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
     private Rigidbody2D _rigid;
     private SlingConfig _config;
     private SlingState _budget; // 튕김 자격(누적 거리/남은 시간/횟수) 추적용 — 이동은 rigidbody + ApplyGravity가 담당
+    private int _bonusKicksLeft;
     private bool _isHitPausing;
 
     public override void Enter(PlayerBehaviour owner)
@@ -18,6 +19,8 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
 
         _rigid  = sling.Rigid;
         _config = sling.Config;
+
+        _bonusKicksLeft = _config.bonusKickCount;
 
         if (sling.ConsumeSling())
         {
@@ -57,7 +60,9 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
     {
         if (_isHitPausing) return;
 
-        if (owner.PlatformerSensor.IsGrounded)
+        // 상승 가드: 히트포즈 해제(Update 단계)와 센서 갱신(FixedUpdate 단계) 사이에
+        // 낡은 IsGrounded가 남아 있을 수 있다 — 그대로 믿으면 GroundState가 발사 직후 x속도를 지워버린다
+        if (owner.PlatformerSensor.IsGrounded && _rigid.linearVelocity.y <= 0f)
         {
             owner.ChangeState<PlayerGroundState>();
         }
@@ -68,7 +73,7 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
         }
     }
 
-    public void OnCollision(PlayerBehaviour owner, Collision2D collision)
+    public void OnCollisionEnter(PlayerBehaviour owner, Collision2D collision)
     {
         if (_isHitPausing) return;
         if ((owner.PlatformerSensor.GroundLayer.value & (1 << collision.gameObject.layer)) == 0) return;
@@ -78,26 +83,45 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
             var normal = collision.GetContact(i).normal;
 
             if (!SlingSimulator.IsWall(normal, _config)) continue;
-            if (!SlingSimulator.CanBounce(in _budget, _config)) return;
 
-            SlingSimulator.Bounce(ref _budget, normal, _config);
-
-            var vel = _budget.Velocity;
-
-            _isHitPausing = true;
-
-            owner.SetFacingDir(vel.x > 0f);
-            owner.SquashStretch.SetContactSurface(ContactSurface.Wall);
-            owner.PlayPlayerAnimation(PlayerAnimationState.Wall);
-            owner.SquashStretch.HoldSideSquash();
-            owner.PauseAndLaunch(owner.BounceHitPauseDuration, vel, () =>
+            if (SlingSimulator.CanBounce(in _budget, _config))
             {
-                _isHitPausing = false;
-                owner.SquashStretch.PlayStretch();
-                owner.PlayPlayerAnimation(PlayerAnimationState.Roll);
-            });
+                // 예산 킥: 조준선이 예측한 튕김
+                SlingSimulator.Bounce(ref _budget, normal, _config);
+                WallKick(owner, _budget.Velocity);
+            }
+            else if (_bonusKicksLeft > 0)
+            {
+                // 보너스 킥: 예산이 소진돼도 벽에 닿으면 추가 점프 — 조준선에는 표시되지 않는 규칙
+                _bonusKicksLeft--;
+                WallKick(owner, SlingSimulator.Kick(normal, _config.kick));
+            }
+            else
+            {
+                // 데드 바운스: 킥 불가면 벽 반대로 살짝 밀어낸다 (벽을 타고 떨어지는 그림 방지, Poinpy식)
+                var vel = _rigid.linearVelocity;
+                vel.x = normal.x * _config.wallRepelSpeed;
+                _rigid.linearVelocity = vel;
+                owner.SetFacingDir(vel.x > 0f);
+            }
 
             return;
         }
+    }
+
+    private void WallKick(PlayerBehaviour owner, Vector2 vel)
+    {
+        _isHitPausing = true;
+
+        owner.SetFacingDir(vel.x > 0f);
+        owner.SquashStretch.SetContactSurface(ContactSurface.Wall);
+        owner.PlayPlayerAnimation(PlayerAnimationState.Wall);
+        owner.SquashStretch.HoldSideSquash();
+        owner.PauseAndLaunch(owner.BounceHitPauseDuration, vel, () =>
+        {
+            _isHitPausing = false;
+            owner.SquashStretch.PlayStretch();
+            owner.PlayPlayerAnimation(PlayerAnimationState.Roll);
+        });
     }
 }
