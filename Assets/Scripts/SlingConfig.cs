@@ -21,6 +21,8 @@ public class SlingConfig : ScriptableObject
     public float circleCastRadius = 0.4f;
     public float minDistance = 2f;
     public int maxBounces = 4;
-    public int maxSlingCharges = 3; // 공중 연속 발사 가능 횟수 (착지 시 풀회복, 적 처치 시 +1)
+    public int bonusKickCount = 1; // 예산 소진 후에도 벽에 닿으면 주어지는 추가 킥 횟수 (조준선엔 미표시)
+    public float wallRepelSpeed = 5f; // 킥 불가 상태로 벽에 닿았을 때 밀려나는 속도 (벽 타고 떨어지는 그림 방지)
+    public int baseSlingCharges = 0; // 시작 차지 — 디자인상 0, 게임 중 IncreaseTotalSlingCharges로 증가 (0보다 큰 값은 개발 테스트용)
     public KickConfig kick = new KickConfig { angle = 45f, speed = 50f };
 }

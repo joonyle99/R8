@@ -37,7 +37,7 @@ public sealed class PlayerAimState : StateBase<PlayerBehaviour>
         {
             if (!pointerInput.JustTapped)
             {
-                owner.SlingBehaviour.ShootSling(_lastDragOffset);
+                owner.SlingBehaviour.ShootSling(_lastDragOffset, consumeCharge: owner.FSM.PrevState is PlayerAirState);
                 owner.ChangeState<PlayerAirState>();
             }
             else

@@ -20,7 +20,8 @@ public class SlingBehaviour : MonoBehaviour
     private bool _isPendingShot; // Shoot 직후 한 번만 true — AirState가 "발사 진입"인지 "그냥 낙하"인지 구분하는 용도
     public Vector2 LastShotDir { get; private set; }
 
-    public int MaxSlingCharges => _config.maxSlingCharges;
+    // 최대 차지는 런타임 상태 — config의 baseSlingCharges로 시작, 업그레이드로 증가 (SO에는 다시 쓰지 않는다)
+    public int TotalSlingCharges { get; private set; }
     public int CurrSlingCharges { get; private set; }
     public bool HasSlingCharge => CurrSlingCharges > 0;
     public event Action<int, int> OnSlingChargesChanged; // (curr, max)
@@ -43,7 +44,8 @@ public class SlingBehaviour : MonoBehaviour
             _bounceMarkers[i].enabled = false;
         }
 
-        CurrSlingCharges = _config.maxSlingCharges;
+        TotalSlingCharges = _config.baseSlingCharges;
+        CurrSlingCharges = TotalSlingCharges;
     }
 
     public void SetActiveSling(bool active) => _isActiveSling = active;
@@ -111,31 +113,43 @@ public class SlingBehaviour : MonoBehaviour
             marker.enabled = false;
     }
 
-    public void ShootSling(Vector2 dragOffset)
+    // 차지는 공중 발사 전용 리소스 — 지상 발사는 무료 (consumeCharge: 공중에서 시작한 조준인지)
+    public void ShootSling(Vector2 dragOffset, bool consumeCharge)
     {
         _isPendingShot = true;
 
         var shotDir = (-1) * dragOffset.normalized;
         LastShotDir = shotDir;
 
-        CurrSlingCharges = Mathf.Max(0, CurrSlingCharges - 1);
-        OnSlingChargesChanged?.Invoke(CurrSlingCharges, MaxSlingCharges);
+        if (consumeCharge)
+        {
+            CurrSlingCharges = Mathf.Max(0, CurrSlingCharges - 1);
+            OnSlingChargesChanged?.Invoke(CurrSlingCharges, TotalSlingCharges);
+        }
     }
 
     public void RestoreCharges()
     {
-        if (CurrSlingCharges == MaxSlingCharges) return;
+        if (CurrSlingCharges == TotalSlingCharges) return;
 
-        CurrSlingCharges = MaxSlingCharges;
-        OnSlingChargesChanged?.Invoke(CurrSlingCharges, MaxSlingCharges);
+        CurrSlingCharges = TotalSlingCharges;
+        OnSlingChargesChanged?.Invoke(CurrSlingCharges, TotalSlingCharges);
     }
 
     public void AddSlingCharge(int amount = 1)
     {
-        if (CurrSlingCharges >= MaxSlingCharges) return;
+        if (CurrSlingCharges >= TotalSlingCharges) return;
 
-        CurrSlingCharges = Mathf.Min(MaxSlingCharges, CurrSlingCharges + amount);
-        OnSlingChargesChanged?.Invoke(CurrSlingCharges, MaxSlingCharges);
+        CurrSlingCharges = Mathf.Min(TotalSlingCharges, CurrSlingCharges + amount);
+        OnSlingChargesChanged?.Invoke(CurrSlingCharges, TotalSlingCharges);
+    }
+
+    // 최대 차지 업그레이드: 늘어난 칸은 즉시 채워서 획득이 바로 체감되게 한다
+    public void IncreaseTotalSlingCharges(int amount = 1)
+    {
+        TotalSlingCharges += amount;
+        CurrSlingCharges = Mathf.Min(CurrSlingCharges + amount, TotalSlingCharges);
+        OnSlingChargesChanged?.Invoke(CurrSlingCharges, TotalSlingCharges);
     }
 
     public bool ConsumeSling()
