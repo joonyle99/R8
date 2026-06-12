@@ -16,7 +16,7 @@ public class SlingBehaviour : MonoBehaviour
     private bool _isActiveSling;
     public bool IsActiveSling => _isActiveSling;
 
-    public SlingResult LastSlingResult { get; private set; }
+    public Vector2 LastSlingDir { get; private set; }
 
     private bool _isPendingSling; // Shoot 직후 한 번만 true — AirState가 "발사 진입"인지 "그냥 낙하"인지 구분하는 용도
 
@@ -81,8 +81,7 @@ public class SlingBehaviour : MonoBehaviour
 
     public void SlingShoot(Vector2 dragOffset)
     {
-        var slingDir = (-1) * dragOffset.normalized;
-        LastSlingResult = _solver.Solve(_rigid.position, slingDir);
+        LastSlingDir = (-1) * dragOffset.normalized;
         _isPendingSling = true;
     }
     public bool ConsumeSling()

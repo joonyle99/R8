@@ -212,4 +212,14 @@ public sealed class PlayerBehaviour : SlingEntity
         vel.y -= Gravity * deltaTime;
         Rigid.linearVelocity = vel;
     }
+
+    // ========= ... =========
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (IsDead) return;
+
+        if (_fsm?.CurrState is PlayerAirState airState)
+            airState.OnCollision(this, collision);
+    }
 }
