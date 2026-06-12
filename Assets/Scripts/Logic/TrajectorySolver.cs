@@ -33,10 +33,7 @@ public class TrajectorySolver
             points.Add(simulation.Position);
 
             if (evt == SlingEvent.Bounce)
-            {
                 bouncePoints.Add(simulation.Position);
-                simulation.Remaining += _config.bonusTime;
-            }
         }
 
         return new SlingResult

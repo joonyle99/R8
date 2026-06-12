@@ -25,21 +25,14 @@ public struct SlingState
     }
 }
 
-/// <summary>
-/// 조준선 예측(TrajectorySolver)과 실제 공중 이동(PlayerAirState)이 공유하는 한 스텝 시뮬레이션.
-/// 규칙(중력, 캐스트, 바닥/벽 분류, 거리 예산, 킥 방향, 보너스 바운스)은 전부 여기에만 존재한다.
-/// 호출자가 이동을 직접 책임지는 경우(리지드바디)에는 Tick 전에 Position/Velocity를 동기화하고,
-/// 반환된 이벤트에 따라 Velocity만 가져다 쓰면 된다.
-/// </summary>
 public static class SlingSimulator
 {
-    public static SlingEvent Tick(ref SlingState state, SlingConfig config, LayerMask groundLayer, float dt)
+    public static SlingEvent Tick(ref SlingState state, SlingConfig config, LayerMask groundLayer, float deltaTime)
     {
-        state.Velocity.y -= config.slingGravity * dt;
+        state.Velocity.y -= config.slingGravity * deltaTime;
+        state.Remaining -= deltaTime;
 
-        state.Remaining -= dt;
-
-        var step = state.Velocity * dt;
+        var step = state.Velocity * deltaTime;
         var stepDist = step.magnitude;
 
         var allHits = Physics2D.CircleCastAll(state.Position, config.circleCastRadius, step.normalized, stepDist, groundLayer);
@@ -50,13 +43,14 @@ public static class SlingSimulator
             state.Total += h.distance;
             state.Position = h.centroid;
 
-            if (Vector2.Angle(h.normal, Vector2.up) <= config.wallAngleThreshold)
-                continue;
-
-            if (state.Total >= config.minDistance && state.Remaining > 0f && state.Bounces < config.maxBounces)
+            if (!IsWall(h.normal, config))
             {
-                state.Bounces++;
-                state.Velocity = Kick(h.normal, config.kick);
+                continue;
+            }
+
+            if (CanBounce(in state, config))
+            {
+                Bounce(ref state, h.normal, config);
                 return SlingEvent.Bounce;
             }
 
@@ -68,8 +62,20 @@ public static class SlingSimulator
         return SlingEvent.None;
     }
 
-    // 벽 킥 속도: angle 0° = 벽 반대편 수평, 90° = 수직 위
-    // (wallNormalThreshold가 벽을 거의 수직면으로 보장하므로 normal.x 부호만으로 좌우를 정한다)
+    // 법선이 수평에 가까우면 벽 (위쪽 법선만 바닥으로 분류 — 천장은 벽 취급)
+    public static bool IsWall(Vector2 normal, SlingConfig config)
+        => Vector2.Angle(normal, Vector2.up) > config.wallAngleThreshold;
+
+    public static bool CanBounce(in SlingState state, SlingConfig config)
+        => state.Total >= config.minDistance && state.Remaining > 0f && state.Bounces < config.maxBounces;
+
+    public static void Bounce(ref SlingState state, Vector2 normal, SlingConfig config)
+    {
+        state.Bounces++;
+        state.Remaining += config.bonusTime;
+        state.Velocity = Kick(normal, config.kick);
+    }
+
     public static Vector2 Kick(Vector2 normal, SlingConfig.KickConfig kick)
     {
         var rad = kick.angle * Mathf.Deg2Rad;
