@@ -8,11 +8,10 @@
       "hash": "e5acc106ee196bc5a32fb14cdf2987b0f96d11e0"
     },
     "com.joonyle.gamedevkit": {
-      "version": "https://github.com/joonyle99/JoonyleGameDevKit.git",
+      "version": "file:D:/GitHub/JoonyleGameDevKit",
       "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "f9e620366bd97321dd4041e591df7dd05563d2f2"
+      "source": "local",
+      "dependencies": {}
     },
     "com.unity.2d.animation": {
       "version": "12.0.3",

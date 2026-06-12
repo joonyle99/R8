@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
-    "com.joonyle.gamedevkit": "https://github.com/joonyle99/JoonyleGameDevKit.git",
+    "com.joonyle.gamedevkit": "file:D:/GitHub/JoonyleGameDevKit",
     "com.unity.2d.animation": "12.0.3",
     "com.unity.2d.aseprite": "2.0.2",
     "com.unity.2d.psdimporter": "11.0.2",
