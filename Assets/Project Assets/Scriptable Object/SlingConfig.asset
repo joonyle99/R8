@@ -12,18 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 619baba91b2fc834dad2bc8fd6df9c20, type: 3}
   m_Name: SlingConfig
   m_EditorClassIdentifier: Assembly-CSharp::ShotConfig
-  slingGravity: 40
-  slingSpeed: 40
-  slingTime: 0.3
-  bonusTime: 0.15
+  slingGravity: 120
+  slingSpeed: 70
+  slingTime: 0.15
+  bonusTime: 0.05
   wallAngleThreshold: 10
   groundShotMaxAngle: 10
   groundShotAimLineLength: 3
   aimTimeScale: 0.05
   circleCastRadius: 0.37
   minDistance: 2
-  maxBounces: 1
-  maxSlingCharges: 3
+  maxBounces: 0
+  bonusKickCount: 1
+  wallRepelSpeed: 5
+  baseSlingCharges: 1
   kick:
     angle: 70
-    speed: 20
+    speed: 30
