@@ -42,6 +42,7 @@ public sealed class PlayerBehaviour : SlingEntity
     public SquashStretch SquashStretch => _squashStretch;
     
     private StateMachine<PlayerBehaviour> _fsm;
+    public StateMachine<PlayerBehaviour> FSM => _fsm;
 
 #if UNITY_EDITOR
     private string _debugState;
@@ -138,6 +139,8 @@ public sealed class PlayerBehaviour : SlingEntity
     protected override void OnKill(CombatEntity target)
     {
         base.OnKill(target);
+
+        SlingBehaviour.AddSlingCharge(); // 적 처치 시 차지 +1
 
         if (!_platformerSensor.IsGrounded)
             ChangeState<PlayerAimState>();

@@ -3,28 +3,21 @@ using JoonyleGameDevKit;
 
 public sealed class PlayerAimState : StateBase<PlayerBehaviour>
 {
-    private bool _enteredFromGround;
-    private Vector2 _velocityBeforeAim;
     private Vector2 _lastDragOffset;
 
     public override void Enter(PlayerBehaviour owner)
     {
         Time.timeScale = owner.SlingBehaviour.Config.aimTimeScale;
-        owner.SquashStretch?.OnAimStart();
-
-        _enteredFromGround = owner.PlatformerSensor.IsGrounded;
-        if (!_enteredFromGround)
-        {
-            _velocityBeforeAim = owner.Rigid.linearVelocity;
-            owner.Rigid.linearVelocity = Vector2.zero;
-        }
+        if (owner.FSM.PrevState is PlayerGroundState)
+            owner.SquashStretch.HoldSoftSquash();
     }
 
     public override void Exit(PlayerBehaviour owner)
     {
         owner.SlingBehaviour.HideTrajectory();
+        if (owner.FSM.PrevState is PlayerGroundState)
+            owner.SquashStretch.Restore();
         Time.timeScale = 1f;
-        owner.SquashStretch?.OnAimEnd();
     }
 
     public override void Update(PlayerBehaviour owner, float deltaTime)
@@ -44,7 +37,7 @@ public sealed class PlayerAimState : StateBase<PlayerBehaviour>
         {
             if (!pointerInput.JustTapped)
             {
-                owner.SlingBehaviour.SlingShoot(_lastDragOffset);
+                owner.SlingBehaviour.ShootSling(_lastDragOffset);
                 owner.ChangeState<PlayerAirState>();
             }
             else
@@ -57,7 +50,7 @@ public sealed class PlayerAimState : StateBase<PlayerBehaviour>
         else if (!pointerInput.IsDragging)
         {
             CancelAim(owner);
-            owner.SquashStretch?.OnAimEnd();
+            owner.SquashStretch.Restore();
             return;
         }
 
@@ -66,14 +59,13 @@ public sealed class PlayerAimState : StateBase<PlayerBehaviour>
 
     private void CancelAim(PlayerBehaviour owner)
     {
-        if (_enteredFromGround)
+        if (owner.FSM.PrevState is PlayerAirState)
         {
-            owner.ChangeState<PlayerGroundState>();
+            owner.ChangeState<PlayerAirState>();
         }
         else
         {
-            owner.Rigid.linearVelocity = _velocityBeforeAim;
-            owner.ChangeState<PlayerAirState>();
+            owner.ChangeState<PlayerGroundState>();
         }
     }
 }

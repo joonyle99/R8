@@ -5,7 +5,9 @@ public sealed class PlayerGroundState : StateBase<PlayerBehaviour>
 {
     public override void Enter(PlayerBehaviour owner)
     {
-        owner.SquashStretch?.SetContactDir(ContactDir.Down);
+        owner.SlingBehaviour.RestoreCharges(); // 착지 시 차지 풀회복
+
+        owner.SquashStretch.SetContactSurface(ContactSurface.Ground);
         owner.PlayPlayerAnimation(PlayerAnimationState.Idle);
 
         var velocity = owner.Rigid.linearVelocity;

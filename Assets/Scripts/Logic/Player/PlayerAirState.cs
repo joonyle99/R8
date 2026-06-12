@@ -21,17 +21,17 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
 
         if (sling.ConsumeSling())
         {
-            var slingDir = sling.LastSlingDir;
-            owner.SetFacingDir(slingDir.x > 0f);
-            _budget = SlingState.Create(_rigid.position, slingDir, _config);
+            var shotDir = sling.LastShotDir;
+            owner.SetFacingDir(shotDir.x > 0f);
+            _budget = SlingState.Create(_rigid.position, shotDir, _config);
 
             _isHitPausing = true;
 
-            owner.SquashStretch?.HoldLand(); // 예비동작: 웅크린 채 유지
+            owner.SquashStretch.HoldSquash(); // 예비동작: 웅크린 채 유지
             owner.PauseAndLaunch(owner.LaunchHitPauseDuration, _budget.Velocity, () =>
             {
                 _isHitPausing = false;
-                owner.SquashStretch?.OnLaunch();
+                owner.SquashStretch.PlayStretch();
             });
         }
         else
@@ -56,8 +56,16 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
     public override void Update(PlayerBehaviour owner, float deltaTime)
     {
         if (_isHitPausing) return;
+
         if (owner.PlatformerSensor.IsGrounded)
+        {
             owner.ChangeState<PlayerGroundState>();
+        }
+        else if (owner.PointerInput.IsDragging && owner.SlingBehaviour.HasSlingCharge)
+        {
+            // 공중 재조준: 차지가 남아 있을 때만 (0이면 드래그해도 조준 진입 자체가 안 됨)
+            owner.ChangeState<PlayerAimState>();
+        }
     }
 
     public void OnCollision(PlayerBehaviour owner, Collision2D collision)
@@ -79,13 +87,13 @@ public sealed class PlayerAirState : StateBase<PlayerBehaviour>
             _isHitPausing = true;
 
             owner.SetFacingDir(vel.x > 0f);
-            owner.SquashStretch?.SetContactDir(ContactDir.Left);
+            owner.SquashStretch.SetContactSurface(ContactSurface.Wall);
             owner.PlayPlayerAnimation(PlayerAnimationState.Wall);
-            owner.SquashStretch?.HoldWallHit();
+            owner.SquashStretch.HoldSideSquash();
             owner.PauseAndLaunch(owner.BounceHitPauseDuration, vel, () =>
             {
                 _isHitPausing = false;
-                owner.SquashStretch?.OnLaunch();
+                owner.SquashStretch.PlayStretch();
                 owner.PlayPlayerAnimation(PlayerAnimationState.Roll);
             });
 

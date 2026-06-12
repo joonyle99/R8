@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class SlingBehaviour : MonoBehaviour
@@ -16,19 +17,22 @@ public class SlingBehaviour : MonoBehaviour
     private bool _isActiveSling;
     public bool IsActiveSling => _isActiveSling;
 
-    public Vector2 LastSlingDir { get; private set; }
+    private bool _isPendingShot; // Shoot 직후 한 번만 true — AirState가 "발사 진입"인지 "그냥 낙하"인지 구분하는 용도
+    public Vector2 LastShotDir { get; private set; }
 
-    private bool _isPendingSling; // Shoot 직후 한 번만 true — AirState가 "발사 진입"인지 "그냥 낙하"인지 구분하는 용도
+    public int MaxSlingCharges => _config.maxSlingCharges;
+    public int CurrSlingCharges { get; private set; }
+    public bool HasSlingCharge => CurrSlingCharges > 0;
+    public event Action<int, int> OnSlingChargesChanged; // (curr, max)
 
     public void Initialize(Rigidbody2D rigid, LayerMask groundLayer)
     {
         _rigid = rigid;
-        
+
         _solver = new TrajectorySolver(_config, groundLayer);
 
         _line = GetComponentInChildren<LineRenderer>();
         _line.textureMode = LineTextureMode.Tile;
-        _line.numCornerVertices = 90;
         _line.useWorldSpace = true;
         _line.enabled = false;
 
@@ -38,6 +42,8 @@ public class SlingBehaviour : MonoBehaviour
             _bounceMarkers[i] = Instantiate(_bounceMarkerPrefab, transform);
             _bounceMarkers[i].enabled = false;
         }
+
+        CurrSlingCharges = _config.maxSlingCharges;
     }
 
     public void SetActiveSling(bool active) => _isActiveSling = active;
@@ -47,7 +53,19 @@ public class SlingBehaviour : MonoBehaviour
     public void ShowTrajectory(Vector2 dragOffset)
     {
         var slingDir = (-1) * dragOffset.normalized;
-        var slingResult = _solver.Solve(_rigid.position, slingDir);
+
+        // 조준선 원점은 물리 위치(_rigid.position)가 아니라 보간된 렌더 위치를 쓴다.
+        // 물리 위치는 물리 스텝에서만 갱신돼서, 슬로우(aimTimeScale) 중 낙하하며 조준하면 선이 한 박자 늦게 따라온다.
+        var origin = (Vector2)_rigid.transform.position;
+
+        // 잠시 주석처리
+        // if (SlingSimulator.IsGroundShot(slingDir, _config))
+        // {
+        //     ShowGroundShotLine(slingDir);
+        //     return;
+        // }
+
+        var slingResult = _solver.Solve(origin, slingDir);
 
         {
             _line.positionCount = slingResult.Points.Count;
@@ -72,6 +90,20 @@ public class SlingBehaviour : MonoBehaviour
         }
     }
 
+    // 땅샷 조준선: 포물선 대신 짧은 고정 길이 직선
+    private void ShowGroundShotLine(Vector2 slingDir)
+    {
+        var origin = (Vector2)_rigid.transform.position;
+
+        _line.positionCount = 2;
+        _line.SetPosition(0, origin);
+        _line.SetPosition(1, origin + slingDir * _config.groundShotAimLineLength);
+        _line.enabled = true;
+
+        foreach (var marker in _bounceMarkers)
+            marker.enabled = false;
+    }
+
     public void HideTrajectory()
     {
         _line.enabled = false;
@@ -79,15 +111,37 @@ public class SlingBehaviour : MonoBehaviour
             marker.enabled = false;
     }
 
-    public void SlingShoot(Vector2 dragOffset)
+    public void ShootSling(Vector2 dragOffset)
     {
-        LastSlingDir = (-1) * dragOffset.normalized;
-        _isPendingSling = true;
+        _isPendingShot = true;
+
+        var shotDir = (-1) * dragOffset.normalized;
+        LastShotDir = shotDir;
+
+        CurrSlingCharges = Mathf.Max(0, CurrSlingCharges - 1);
+        OnSlingChargesChanged?.Invoke(CurrSlingCharges, MaxSlingCharges);
     }
+
+    public void RestoreCharges()
+    {
+        if (CurrSlingCharges == MaxSlingCharges) return;
+
+        CurrSlingCharges = MaxSlingCharges;
+        OnSlingChargesChanged?.Invoke(CurrSlingCharges, MaxSlingCharges);
+    }
+
+    public void AddSlingCharge(int amount = 1)
+    {
+        if (CurrSlingCharges >= MaxSlingCharges) return;
+
+        CurrSlingCharges = Mathf.Min(MaxSlingCharges, CurrSlingCharges + amount);
+        OnSlingChargesChanged?.Invoke(CurrSlingCharges, MaxSlingCharges);
+    }
+
     public bool ConsumeSling()
     {
-        if (!_isPendingSling) return false;
-        _isPendingSling = false;
+        if (!_isPendingShot) return false;
+        _isPendingShot = false;
         return true;
     }
 }

@@ -76,6 +76,10 @@ public static class SlingSimulator
         state.Velocity = Kick(normal, config.kick);
     }
 
+    // 땅샷: 조준 고도각(수평 기준, 아래쪽은 음수)이 임계값 이하면 포물선 대신 직선 발사로 취급
+    public static bool IsGroundShot(Vector2 dir, SlingConfig config)
+        => Mathf.Atan2(dir.y, Mathf.Abs(dir.x)) * Mathf.Rad2Deg <= config.groundShotMaxAngle;
+
     public static Vector2 Kick(Vector2 normal, SlingConfig.KickConfig kick)
     {
         var rad = kick.angle * Mathf.Deg2Rad;
