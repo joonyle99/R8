@@ -24,7 +24,7 @@ public sealed class SquashStretch : MonoBehaviour
         _pivot = pivot;
         _animator = animator;
         _baseScale = pivot.localScale;
-        _baseScale.x = Mathf.Abs(_baseScale.x); // x는 SetFacingDir가 부호를 매 프레임 덮어쓰므로 절댓값으로 저장
+        _baseScale.x = Mathf.Abs(_baseScale.x); // 좌우 반전은 SetFacingDir가 Visual에서 처리하므로 Pivot 스케일은 항상 양수
     }
 
     public void OnLaunch() => Play(new Vector3(0.55f, 1.6f, 1f));

@@ -4,6 +4,7 @@ using UnityEngine;
 public abstract class CombatEntity : MonoBehaviour
 {
     public Animator Animator { get; protected set; }
+    public Transform Visual { get; protected set; }
     public Transform Pivot { get; protected set; }
     public SpriteRenderer SpriteRenderer { get; protected set; }
     protected Material Material { get; set; }
@@ -32,7 +33,8 @@ public abstract class CombatEntity : MonoBehaviour
         _onDead = onDead;
 
         Animator = GetComponentInChildren<Animator>();
-        Pivot = transform.Find("Visual/Pivot");
+        Visual = transform.Find("Visual");
+        Pivot = Visual.Find("Pivot");
         SpriteRenderer = GetComponentInChildren<SpriteRenderer>();
         Material = SpriteRenderer.material;
         Rigid = GetComponentInChildren<Rigidbody2D>();
@@ -138,8 +140,9 @@ public abstract class CombatEntity : MonoBehaviour
     {
         this.isFacingRight = isFacingRight;
 
-        var scale = transform.localScale;
+        // 물리 루트의 스케일을 뒤집으면 콜라이더가 재생성되어 접촉이 한 틱 끊기므로 비주얼만 뒤집는다
+        var scale = Visual.localScale;
         scale.x = Mathf.Abs(scale.x) * (this.isFacingRight ? 1f : -1f);
-        transform.localScale = scale;
+        Visual.localScale = scale;
     }
 }
