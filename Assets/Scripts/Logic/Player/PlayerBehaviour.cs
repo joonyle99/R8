@@ -43,7 +43,9 @@ public sealed class PlayerBehaviour : SlingEntity
     
     private StateMachine<PlayerBehaviour> _fsm;
 
-    [SerializeField] private string _debugState;
+#if UNITY_EDITOR
+    private string _debugState;
+#endif
 
     private static readonly int IDLE = Animator.StringToHash("Idle");
     private static readonly int ROLL = Animator.StringToHash("Roll");
@@ -87,9 +89,11 @@ public sealed class PlayerBehaviour : SlingEntity
 
         base.FixedTick(fixedDeltaTime);
 
+        _platformerSensor?.FixedTick(fixedDeltaTime);
+
         if (_platformerSensor != null && !_platformerSensor.IsGrounded)
             ApplyGravity(fixedDeltaTime);
-            
+
         _fsm?.FixedUpdate(fixedDeltaTime);
     }
 
@@ -99,13 +103,15 @@ public sealed class PlayerBehaviour : SlingEntity
 
         base.Tick(deltaTime);
 
-        _platformerSensor?.Tick();
         _fsm?.Update(deltaTime);
     }
 
     public void ChangeState<TState>() where TState : StateBase<PlayerBehaviour>
     {
-        _debugState = typeof(TState).Name;
+#if UNITY_EDITOR
+    _debugState = typeof(TState).Name;
+#endif
+
         _fsm.ChangeState<TState>();
     }
 
